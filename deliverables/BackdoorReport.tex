@@ -1,0 +1,50 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage{ctable}
+\usepackage{multirow}
+\usepackage{mdwlist}
+\onehalfspacing
+\newcommand{\indentitem}{\setlength\itemindent{25pt}}
+\usepackage{fancyvrb}
+\usepackage[T1]{fontenc}
+
+%-------------
+\textheight = 650pt
+\oddsidemargin = 5pt
+\textwidth = 450pt
+%-------------
+
+\begin{document}
+
+\begin{center}
+	\textsc{\LARGE CS 600.443 --- Security \& Privacy}\\[0.5cm]
+	\textsc{\Large Project 2 --- Project Report}\\[0.25cm]
+	\line(1,0){450}\\[10pt]
+	% \textsc{\large Team Members}
+\end{center}
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\textsc{\textbf{Team Members}}\\
+Parsia \textsc{Hakimian}\\
+Kartik \textsc{Thapar}
+\end{flushleft}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\begin{flushright} \large
+\textsc{\textbf{Date}}\\
+10/23/2012
+\end{flushright}
+\end{minipage}
+\begin{center}
+	\line(1,0){450}\\[15pt]
+\end{center}
+
+\input{final/intro.tex}
+\input{final/backdoor.tex}
+\pagebreak
+\input{final/appendix.tex}
+
+\end{document}

@@ -1,0 +1,17 @@
+(dp0
+S'HmlPvMyMJg+nqL8eTvaRK4mJ3Xe7msrBklbs85k+t38='
+p1
+(dp2
+S'president'
+p3
+(lp4
+I0
+asS'counsel'
+p5
+(lp6
+I1
+asS'congress'
+p7
+(lp8
+I2
+ass.

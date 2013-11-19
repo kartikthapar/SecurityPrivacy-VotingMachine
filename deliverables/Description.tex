@@ -1,0 +1,65 @@
+\documentclass[a4paper, 10pt]{article}
+
+\usepackage{setspace}
+\usepackage{ctable}
+\usepackage{multirow}
+\usepackage{mdwlist}
+\onehalfspacing
+\newcommand{\indentitem}{\setlength\itemindent{25pt}}
+
+\begin{document}
+
+\begin{center}
+	\textsc{\LARGE CS 600.443 --- Security \& Privacy}\\[0.5cm]
+	\textsc{\Large Project 2 --- Description}\\[0.25cm]
+	\line(1,0){320}\\[10pt]
+	% \textsc{\large Team Members}
+\end{center}
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\textbf{Team Members}\\
+Kartik Thapar\\
+Parsia Hakimian
+\end{flushleft}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\begin{flushright} \large
+\textbf{Date}\\
+10/28/2012
+\end{flushright}
+\end{minipage}
+\begin{center}
+	\line(1,0){320}\\[15pt]
+\end{center}
+
+
+% A one page maximum writeup listing all of the software packages used by your system, including operating system, software libraries, databases, etc.
+
+\textbf{This document details the software used to build the voting machine.}\\
+
+The software is natively coded in \textbf{CPython} and developed on Mac OS X (v8) and Windows (v7). Following is the complete list of modules required to build this project---
+
+\begin{itemize*}
+	\item \textbf{Crypto}: \verb+PyCrypto+, \verb+M2Crypto+, \verb+hashlib+, \verb+openssl+
+	\item \textbf{GUI}: \verb+Tkinter+, \verb+tkFont+, \verb+tkMessageBox+, \verb+tkFileDialog+
+	\item \textbf{Network connections}: \verb+socket+, \verb+ssl+, \verb+openssl+
+	\item \textbf{Others:} \verb+sys+, \verb+os+, \verb+__future__+, \verb+platform+, \verb+pickle+, \verb+json+, \verb+binascii+, \verb+base64+, \verb+random+
+\end{itemize*}
+
+The code was originally written for Python 2.7.2 and enough modifications were required to support Python 3.0 and above. Moreover, M2Crypto does not include support for Python 3.0 or above. There, a strict requirement is to run Python 2.7.2 or 2.7.3 for this project. To check the version of python installed on your machine, in terminal, type ---
+
+\begin{verbatim}
+	> python
+	Python 2.7.2 (default, Jun 20 2012, 16:23:33)
+	[GCC 4.2.1 Compatible Apple Clang 4.0 (tags/Apple/clang-418.0.60)] on darwin
+\end{verbatim}
+
+As the voting machine is simply an embedded system in itself with it's own fork of a conventional operating system, a virtual machine (Ubuntu Linux) has been provided to provide an illusion for ready-to-deploy voting machine system. However, the user may install or re-install any module for the purpose of debugging.\\
+
+\noindent Login credentials for Ubuntu VM:
+
+\noindent Username: \verb+ubuntu+\\
+\noindent Password: \verb+reverse+
+
+\end{document}
